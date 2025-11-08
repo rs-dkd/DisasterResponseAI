@@ -22,20 +22,41 @@ public class AccidentManager : MonoBehaviour
     /// <summary>
     /// Setup the manager and start the main sequence
     /// </summary>
-    void Start()
+    private IEnumerator Start()
     {
-        allLanes = mainTrafficSystemParent.GetComponentsInChildren<TrafficLane>().ToList();
-
-        if (allLanes == null || allLanes.Count == 0)
+        if (mainTrafficSystemParent == null)
         {
-            Debug.LogError("AccidentManager: No TrafficLanes found!", this);
-            enabled = false;
-            return;
+            Debug.LogError("AccidentManager: mainTrafficSystemParent is not assigned!", this);
+            yield break;
         }
+
+        float timeout = 5f;
+        float elapsed = 0f;
+        TrafficLane[] lanes = null;
+
+        while ((lanes == null || lanes.Length == 0) && elapsed < timeout)
+        {
+            lanes = mainTrafficSystemParent.GetComponentsInChildren<TrafficLane>(true);
+            if (lanes != null && lanes.Length > 0) break;
+
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        if (lanes == null || lanes.Length == 0)
+        {
+            Debug.LogError("AccidentManager: No TrafficLanes found under mainTrafficSystemParent after waiting.", this);
+            enabled = false;
+            yield break;
+        }
+
+        allLanes = lanes.ToList();
+
         if (accidentPrefab == null)
         {
             Debug.LogWarning("AccidentManager: No accident prefab assigned.", this);
         }
+
         StartCoroutine(AccidentCheckLoop());
     }
     /// <summary>

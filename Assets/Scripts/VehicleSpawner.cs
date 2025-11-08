@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -22,22 +23,41 @@ public class VehicleSpawner : MonoBehaviour
     /// <summary>
     /// Setup - Get all lanes and spawn the vehicles
     /// </summary>
-    void Start()
+    private IEnumerator Start()
     {
-        allLanes = mainTrafficSystemParent.GetComponentsInChildren<TrafficLane>().ToList();
-
-        if (allLanes == null || allLanes.Count == 0)
+        if (mainTrafficSystemParent == null)
         {
-            Debug.LogError("VehicleSpawner: No TrafficLanes found in scene! Cannot spawn vehicles.");
-            return;
+            Debug.LogError("VehicleSpawner: mainTrafficSystemParent is not assigned!");
+            yield break;
         }
+
+        float timeout = 5f;
+        float elapsed = 0f;
+        TrafficLane[] lanes = null;
+
+        while ((lanes == null || lanes.Length == 0) && elapsed < timeout)
+        {
+            lanes = mainTrafficSystemParent.GetComponentsInChildren<TrafficLane>(true);
+            if (lanes != null && lanes.Length > 0) break;
+
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        if (lanes == null || lanes.Length == 0)
+        {
+            Debug.LogError("VehicleSpawner: No TrafficLanes found under mainTrafficSystemParent after waiting. Check that lanesParent == mainTrafficSystemParent.");
+            yield break;
+        }
+
+        allLanes = lanes.ToList();
+
         if (vehiclePrefab == null)
         {
             Debug.LogError("VehicleSpawner: Vehicle Prefab is not set!");
-            return;
+            yield break;
         }
 
-        //Spawn the vehicles
         SpawnVehicles();
     }
     /// <summary>

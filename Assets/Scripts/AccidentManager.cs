@@ -72,6 +72,12 @@ public class AccidentManager : MonoBehaviour
     /// </summary>
     private IEnumerator ManageAccident(TrafficLane lane)
     {
+        float posOnLane = Random.Range(0.0f, 1.0f);
+        AccidentData accident = new AccidentData(Time.timeSinceLevelLoad,AccidentType.VehicleAccident,lane, posOnLane);
+
+        EmergencyResponseManager.Instance.allAccidents.Add(accident);
+
+
         Debug.Log($"Accident started on {lane.name}!");
 
         //Close the lane for the network
@@ -82,8 +88,8 @@ public class AccidentManager : MonoBehaviour
         GameObject obstacle = null;
         if (accidentPrefab != null)
         {
-            Vector3 pos = lane.GetWorldPoint(0.5f);
-            Quaternion rot = Quaternion.LookRotation(lane.GetWorldTangent(0.5f));
+            Vector3 pos = lane.GetWorldPoint(posOnLane);
+            Quaternion rot = Quaternion.LookRotation(lane.GetWorldTangent(posOnLane));
             obstacle = Instantiate(accidentPrefab, pos, rot);
 
             if (obstacle.layer != LayerMask.NameToLayer("Vehicles"))

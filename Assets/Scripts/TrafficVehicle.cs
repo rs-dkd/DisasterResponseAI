@@ -135,7 +135,18 @@ public class TrafficVehicle : MonoBehaviour
         //Local Avoidance logic
         if (enableLocalAvoidance && Physics.Raycast(transform.position, transform.forward, out hit, detectionDistance, vehicleLayerMask))
         {
-            //TODO - add local avoidance for the vehicle in front and if changing lanes
+            float distance = hit.distance;
+            float proximity = Mathf.InverseLerp(detectionDistance, stoppingDistance, distance);
+            avoidanceSpeed = Mathf.Lerp(baseSpeed, 0, proximity);
+
+            //Local Avoidance logic for changing lanes
+            if (enableLaneChanging &&
+                !isChangingLane &&
+                proximity >= laneChangeTriggerProximity &&
+                timeSinceLastLaneChange >= laneChangeCooldown)
+            {
+                TryLaneChange();
+            }
 
         }
 
@@ -285,7 +296,53 @@ public class TrafficVehicle : MonoBehaviour
     }
 
 
+    private void TryLaneChange()
+    {
+        if (currentLane.neighborLaneLeft != null)
+        {
+            if (IsLaneChangeSafe(currentLane.neighborLaneLeft))
+            {
+                StartLaneChange(currentLane.neighborLaneLeft, true);
+                return;
+            }
+        }
 
+        if (currentLane.neighborLaneRight != null)
+        {
+            if (IsLaneChangeSafe(currentLane.neighborLaneRight))
+            {
+                StartLaneChange(currentLane.neighborLaneRight, true);
+                return;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Checks if the target lane is clear
+    /// </summary>
+    private bool IsLaneChangeSafe(TrafficLane lane)
+    {
+        Vector3 checkCenter = lane.GetWorldPoint(t);
+        Vector3 checkHalfExtents = new Vector3(1.0f, 1.0f, laneChangeCheckDistance / 2.0f);
+
+        Vector3 tangent = lane.GetWorldTangent(t).normalized;
+        if (tangent == Vector3.zero) tangent = transform.forward;
+        Quaternion checkRot = Quaternion.LookRotation(tangent);
+
+        Collider[] hits = Physics.OverlapBox(checkCenter, checkHalfExtents, checkRot, vehicleLayerMask);
+
+        foreach (var hit in hits)
+        {
+            if (hit.transform != this.transform)
+            {
+                // Hit another vehicle. Not safe.
+                return false;
+            }
+        }
+
+        // No other vehicles hit. Safe to change.
+        return true;
+    }
 
     /// <summary>
     /// Begins the lane change maneuver.

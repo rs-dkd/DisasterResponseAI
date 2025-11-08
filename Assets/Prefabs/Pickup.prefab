@@ -384,6 +384,12 @@ MonoBehaviour:
   vehicleLayerMask:
     serializedVersion: 2
     m_Bits: 64
+  enableLaneChanging: 1
+  laneChangeSpeed: 2
+  laneChangeCooldown: 1
+  laneChangeCheckDistance: 15
+  laneChangeTriggerProximity: 0.5
+  enableLocalAvoidance: 0
 --- !u!65 &5687117617766397159
 BoxCollider:
   m_ObjectHideFlags: 0
